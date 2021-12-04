@@ -1,0 +1,81 @@
+\mode<article>{
+\lstset{
+  language=C++,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  showstringspaces=false,
+  basicstyle=\small,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{brown},
+  columns=fullflexible,
+  inputencoding=utf8,
+  extendedchars=true,
+  upquote=true,
+  morekeywords=[1]{_Pragma,constexpr,nullptr,alignof,alignas,decltype,override,final,noexcept,deprecated,thread_local,co_await,co_return,co_yield,fallthrough},
+  literate=%
+    {¿}{{?`}}{1}
+    {¡}{{!`}}{1}
+    {á}{{\'a}}{1}
+    {é}{{\'e}}{1}
+    {í}{{\'i}}{1}
+    {ó}{{\'o}}{1}
+    {ú}{{\'u}}{1}
+    {ñ}{{\~n}}{1}
+}
+}
+
+\mode<presentation>{
+\lstset{
+  language=C++,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  showstringspaces=false,
+  basicstyle=\scriptsize,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+  directivestyle=\bfseries\color{green!40!black},
+  columns=fullflexible,
+  inputencoding=utf8,
+  extendedchars=true,
+  upquote=true,
+  morekeywords=[1]{_Pragma,constexpr,nullptr,alignof,alignas,decltype,override,final,noexcept,deprecated,thread_local,co_await,co_return,co_yield,fallthrough},
+  literate=%
+    {¿}{{?`}}{1}
+    {¡}{{!`}}{1}
+    {á}{{\'a}}{1}
+    {é}{{\'e}}{1}
+    {í}{{\'i}}{1}
+    {ó}{{\'o}}{1}
+    {ú}{{\'u}}{1}
+    {ñ}{{\~n}}{1}
+}
+}
+
+\newcommand{\cppkey}[1]{%
+{\color{green!40!black}\textbf{#1}}%
+}
+
+\newcommand{\cppid}[1]{%
+{\color{blue}\textbf{#1}}%
+}
+
+\newcommand{\cppstr}[1]{%
+{\color{orange}\textbf{#1}}%
+}
+
+
+\lstdefinestyle{terminal}{
+  language=bash,
+  basicstyle=\scriptsize\ttfamily,
+  numbersep=3pt,
+  frame=tb,
+  columns=fullflexible,
+  backgroundcolor=\color{yellow!20},
+}
+

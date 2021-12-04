@@ -1,0 +1,17 @@
+GUIDE_BASE=guide
+
+GUIDE_PARTS= \
+metadata.tex \
+guide/guide.tex \
+guide/content.tex \
+guide/titlepage.tex \
+guide/license.tex \
+guide/foreword.tex \
+guide/ack.tex \
+bib/*.bib
+
+GUIDE_OUT=guia-cpp-par
+
+GUIDE_PDF=$(GUIDE_OUT).pdf
+
+GUIDE_FINAL_PDF=$(FINAL_DIR)/$(GUIDE_PDF)

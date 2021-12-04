@@ -1,0 +1,41 @@
+\documentclass[11pt,a4paper,twoside,final,notitlepage,fleqn]{article}%
+\usepackage{beamerarticle}
+
+\input{config/packages}
+
+\usepackage{graphicx}
+\usepackage{xcolor}
+\input{config/common}
+\input{metadata}
+
+\usepackage{url}
+%Package fancyhdr
+\usepackage{fancyhdr}
+\setlength{\headheight}{1.7cm}%{13.6pt}
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{\includegraphics[height=1.25cm]{logos/uc3m.png}}
+\chead{}
+\rhead{\includegraphics[height=1.25cm]{logos/arcos.png}}
+\rfoot{\begin{tabular}{r}\coursetitle\\Versión \versionid\end{tabular}}
+\cfoot{\begin{tabular}{c}{\thepage}\\{}\end{tabular}}
+\lfoot{
+\begin{tabular}{l}
+\textbf{\ccbysa} -- CC BY-SA 4.0\\J. Daniel Garcia -- ARCOS@UC3M
+\end{tabular}
+}
+\renewcommand{\headrulewidth}{0.5pt} % remove lines as well
+\renewcommand{\footrulewidth}{0.5pt}
+\renewcommand{\plainheadrulewidth}{0.5pt}
+\renewcommand{\plainfootrulewidth}{0.5pt}
+
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.9}
+
+\usepackage{palatino}
+\usepackage{lmodern}
+
+\renewcommand*\rmdefault{lmr}
+\renewcommand*\ttdefault{ppl}
+

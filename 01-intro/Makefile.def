@@ -1,0 +1,9 @@
+INTRO_BASE= 01-intro
+INTRO_PARTS= \
+$(INTRO_BASE)/*.tex  \
+metadata.tex \
+license-cc.tex
+
+INTRO_PDF=$(INTRO_BASE).pdf
+
+FINAL_INTRO_PDF=$(FINAL_DIR)/$(INTRO_PDF)
