@@ -1,0 +1,222 @@
+\section{Procesando datos en paralelo}
+
+\begin{frame}[t,fragile]{Procesando datos en un vector}
+\begin{block}{Elevar al cuadrado}
+\begin{lstlisting}
+void square_seq(std::vector<int> &v) {
+  for (auto &x : v) {
+    x *= x;
+  }
+}
+\end{lstlisting}
+\end{block}
+
+\mode<presentation>{\vfill\pause}
+\begin{block}{Calcular el promedio}
+\begin{lstlisting}
+double average_seq(const std::vector<int> &v) {
+  double s = 0.0;
+  for (auto x : v) {
+    s += x;
+  }
+  return s / static_cast<double>(v.size());
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Proyecciones}
+\begin{itemize}
+  \item Se puede expresar la función cuadrado como una \textmark{proyección}
+        con el algoritmo \cppid{std::transform()}
+\end{itemize}
+
+\mode<presentation>{\vfill\pause}
+\begin{block}{Usando std::transform()}
+\begin{lstlisting}
+#include <algorithm>
+
+void square_stl(std::vector<int> &v) {
+  std::transform(v.begin(), v.end(), v.begin(),
+                 [](auto x) { return x * x; });
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Reducciones}
+\begin{itemize}
+  \item Se puede expresar la suma como una \textmark{reducción}
+        con \cppid{std::reduce()}.
+\end{itemize}
+
+\mode<presentation>{\vfill\pause}
+\begin{block}{Usando std::reduce()}
+\begin{lstlisting}
+#include <numeric>
+
+double average_stl(const std::vector<int> &v) {
+  double s = std::reduce(v.begin(), v.end(), 0.0,
+                         [](auto x, auto y) { return x + y; });
+  return s / static_cast<double>(v.size());
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Versiones paralelas de la STL}
+\begin{itemize}
+  \item La mayoría de los algoritmos de la STL admiten un parámetro para indicar
+        la política de ejecución:
+    \begin{itemize}
+      \item \cppid{std::execution:seq}:
+            Ejecución secuencial.
+      \item \cppid{std::execution:par}:
+            Ejecución paralela.
+      \item \cppid{std::execution:par\_unseq}:
+            Ejecución paralela, vectorizada y/o migración entre hilos.
+      \item \cppid{std::execution:unseq}:
+            Ejecución vectorizada.
+    \end{itemize}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Transformación}
+\begin{block}{Transformación}
+\begin{lstlisting}
+void square_stlpar(std::vector<int> &v) {
+  std::transform(std::execution::par,
+      v.begin(), v.end(), v.begin(),
+                 [](auto x) { return x * x; });
+}
+
+void square_stlunseq(std::vector<int> &v) {
+  std::transform(std::execution::unseq,
+                 v.begin(), v.end(), v.begin(),
+                 [](auto x) { return x * x; });
+}
+
+void square_stlparunseq(std::vector<int> &v) {
+  std::transform(std::execution::par_unseq,
+                 v.begin(), v.end(), v.begin(),
+                 [](auto x) { return x * x; });
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Reducción}
+\begin{block}{Reducción}
+\begin{lstlisting}
+double average_stlpar(const std::vector<int> &v) {
+  double s = std::reduce(std::execution::par, v.begin(), v.end(), 0.0,
+                         [](auto x, auto y) { return x + y; });
+  return s / static_cast<double>(v.size());
+}
+
+double average_stlunseq(const std::vector<int> &v) {
+  double s = std::reduce(std::execution::unseq, v.begin(), v.end(), 0.0,
+                         [](auto x, auto y) { return x + y; });
+  return s / static_cast<double>(v.size());
+}
+
+double average_stlparunseq(const std::vector<int> &v) {
+  double s = std::reduce(std::execution::par_unseq, v.begin(), v.end(), 0.0,
+                         [](auto x, auto y) { return x + y; });
+  return s / static_cast<double>(v.size());
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Paralelización con oneTBB}
+\begin{itemize}
+  \item Espacio de nombres \cppid{oneapi::tbb}.
+\begin{lstlisting}
+using namespace oneapi::tbb;
+\end{lstlisting}
+
+  \item Rango de iteración:
+    \begin{itemize}
+      \item Varios tipos de rangos en la biblioteca.
+      \item Rango dentro de un bloque: \cppid{blocked\_range<T>}.
+        \begin{itemize}
+          \item \cppid{T} puede ser un tipo númerico o iterador.
+        \end{itemize}
+      \item Al paralelizar se opera sobre rangos.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cuadrado paralelo}
+\begin{block}{parallel\_for()}
+\begin{lstlisting}
+void square_tbb(std::vector<int> &v) {
+  using namespace oneapi::tbb;
+  using range = blocked_range<std::vector<int>::iterator>;
+  parallel_for(range{v.begin(), v.end()},
+               [](const range &r) {
+                 for (auto & x : r) {
+                   x *= x;
+                 }
+               });
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Suma paralela}
+\begin{block}{parallel\_reduce()}
+\begin{lstlisting}
+double average_tbb(const std::vector<int> &v) {
+  using namespace oneapi::tbb;
+  using range_type = blocked_range<std::vector<int>::const_iterator>;
+  double sum = parallel_reduce(
+      range_type{v.begin(), v.end()}, 0.0,
+      [](const range_type &r, double x) -> double {
+        for (double value : r) {
+          x += value;
+        }
+        return x;
+      },
+      [](auto x, auto y) { return x + y; });
+  return sum / static_cast<double>(v.size());
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cuadrado paralelo + STL}
+\begin{block}{parallel\_for()}
+\begin{lstlisting}
+void square_tbb(std::vector<int> &v) {
+  using namespace oneapi::tbb;
+  using range = blocked_range<std::vector<int>::iterator>;
+  parallel_for(range{v.begin(), v.end()},
+               [](const range &r) {
+                 std::transform(r.begin(), r.end(), r.begin(),
+                                [](auto x) { return x * x; });
+               });
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Suma paralela}
+\begin{block}{parallel\_reduce()}
+\begin{lstlisting}
+double average_tbb(const std::vector<int> &v) {
+  using namespace oneapi::tbb;
+  using range_type = blocked_range<std::vector<int>::const_iterator>;
+  double sum = parallel_reduce(
+      range_type{v.begin(), v.end()}, 0.0,
+      [](const range_type &r, double x) -> double {
+        return std::reduce(r.begin(), r.end(), x);
+      },
+      [](auto x, auto y) { return x + y; });
+  return sum / static_cast<double>(v.size());
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
