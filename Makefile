@@ -13,15 +13,12 @@ LOGOS=\
 logos/arcos.png \
 logos/uc3m.png
 
+ALL_PARTS = $(GUIDE_PARTS)
+ALL_SLIDES_FINAL_PDF=
+
 include guide/Makefile.def
 include 01-intro/Makefile.def
-
-ALL_PARTS= \
-$(GUIDE_PARTS) \
-$(INTRO_PARTS) \
-
-ALL_SLIDES_FINAL_PDF= \
-$(FINAL_DIR)/$(INTRO_PDF) \
+include 02-patrones/Makefile.def
 
 ALL_FINAL_PDF=\
 $(FINAL_DIR) \
@@ -46,3 +43,4 @@ $(FINAL_DIR):
 
 include $(GUIDE_BASE)/Makefile.mk
 include $(INTRO_BASE)/Makefile.mk
+include $(PATRONES_BASE)/Makefile.mk

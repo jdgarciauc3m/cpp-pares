@@ -1,0 +1,111 @@
+\subsection{parallel\_for()}
+
+\begin{frame}[t,fragile]{Bucles for paralelos}
+\begin{itemize}
+  \item Útil para transformar bucles con número conocido de iteraciones.
+\begin{lstlisting}
+for (int i=0; i<max; ++i) {
+  f(v[i])
+}
+\end{lstlisting}
+
+  \mode<presentation>{\vfill\pause}
+  \item Ejecuta una función en un espacio de iteraciones.
+\begin{lstlisting}
+tbb::parallel_for(0, max, [=](int i) {
+  f(v[i]);
+});
+\end{lstlisting}
+    \begin{itemize}
+      \item El objeto invocable toma un índice como parámetro.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Bucles basados en índice}
+\begin{itemize}
+  \item Un bucle for basado en índice reparte el espacio de iteraciones
+        entre varias tareas.
+    \begin{itemize}
+\begin{lstlisting}
+parallel_for(first, last, func);
+\end{lstlisting}
+      \item Invoca a \cppid{func(i)} para todo \cppid{i} $\in$ \cppid{[first,last)}.
+
+\mode<presentation>{\pause}
+\begin{lstlisting}
+parallel_for(first, last, step, func);
+\end{lstlisting}
+      \item Invoca a \cppid{func(i)} para todo \cppid{i} $\in$ \cppid{[first,last)} 
+            con $i=first, first + step, first + 2 \cdot step, \ldots$.
+    \end{itemize}
+
+  \mode<presentation>{\vfill\pause}
+  \item \textmark{Observaciones}:
+    \begin{itemize}
+      \item El rango de iteración se divide en bloques que se asignan a tareas.
+      \item Cada iteración del bucle puede ejecutar potencialmente en paralelo con otras.
+      \item El código de \cppid{func()} debe ser \textemph{thread-safe}.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Dependencias de datos}
+\begin{itemize}
+  \item Se debe evitar que el cuerpo del bucle presente dependencias de datos.
+\begin{lstlisting}
+tbb::parallel_for(0, max, [=](int i) {
+  v[i] = v[i-1] + 1;
+});
+\end{lstlisting}
+    \begin{itemize}
+      \item Posibilidad de \textbad{carreras de datos}.
+      \item \textbad{Distinto resultado} dependiendo del 
+            \textmark{orden de ejecución} entre iteraciones.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Producto de matrices}
+\begin{block}{Implementación secuencial}
+\begin{lstlisting}
+matrix matrix::operator*(const matrix &m) const {
+  CONTRACT_PRE(columns_ == m.rows_);
+  matrix result{rows_, m.columns()};
+  for (int i = 0; i < rows_; ++i) {
+    for (int j = 0; j < m.columns(); ++j) {
+      double sum = 0;
+      for (int k = 0; k < columns_; ++k) {
+        sum += this->operator()(i, j) * m(k, j);
+      }
+      result(i, j) = sum;
+    }
+  }
+  return result;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Producto de matrices}
+\begin{block}{Implementación paralela}
+\begin{lstlisting}[escapechar=@]
+matrix matrix::operator*(const matrix &m) const {
+  CONTRACT_PRE(columns_ == m.rows_);
+  matrix result{rows_, m.columns()};
+  @\color{red}{tbb::parallel\_for}@(0, rows_, [*this, m, &result](int i) {
+    for (int j = 0; j < m.columns(); ++j) {
+      double sum = 0;
+      for (int k = 0; k < columns_; ++k) {
+        sum += this->operator()(i, j) * m(k, j);
+      }
+      result(i, j) = sum;
+    }
+  });
+  return result;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+

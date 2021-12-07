@@ -1,0 +1,21 @@
+\section{Paralelismo funcional}
+
+\begin{frame}[t,fragile]{Invocación paralela}
+\begin{itemize}
+  \item La función \cppid{parallel\_invoke()} permite
+        crear varias tareas que se ejecutan en paralelo.
+    \begin{itemize}
+      \item El número de tareas no tiene correspondencia con el número de hilos.
+      \item Cada argumento debe ser un objeto invocable sin parámetros.
+    \end{itemize}
+\end{itemize}
+
+\begin{block}{Parallel invoke}
+\begin{lstlisting}
+auto v = make_vector(max, rng);
+auto w = make_vector(max, rng);
+tbb::parallel_invoke([&] { std::sort(v.begin(), v.end()); },
+                     [&] { std::sort(w.begin(), w.end()); });
+\end{lstlisting}
+\end{block}
+\end{frame}

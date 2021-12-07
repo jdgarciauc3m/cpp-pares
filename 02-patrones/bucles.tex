@@ -1,0 +1,25 @@
+\section{Bucles simples}
+
+\begin{frame}[t,fragile]{Bucles paralelos}
+\begin{itemize}
+  \item Muchas aplicaciones ejecutan un bucle un número fijo de iteraciones.
+\begin{lstlisting}
+for (int i=0; i<max; ++i) {
+  f(v[i]);
+}
+\end{lstlisting}
+
+  \mode<presentation>{\vfill\pause}
+  \item \textmark{Ejemplos}:
+    \begin{itemize}
+      \item \cppid{parallel\_for()}
+      \item \cppid{parallel\_reduce()}
+      \item \cppid{parallel\_scan()}
+      \item \cppid{parallel\_for\_each()}
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\input{02-patrones/parallel-for}
+\input{02-patrones/parallel-reduce}
+\input{02-patrones/parallel-scan}
