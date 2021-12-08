@@ -1,1 +1,250 @@
 \subsection{parallel\_reduce()}
+
+\begin{frame}[t,fragile]{Reducciones}
+\begin{itemize}
+  \item Una reducción calcula el resultado de aplicar una
+        operación binaria a una secuencia de valores.
+\[
+red = x_1 \oplus x_2 \oplus \ldots \oplus x_n
+\]
+
+    \mode<presentation>{\vfill\pause}
+    \begin{itemize}
+      \item Se asume que la operación es asociativa:
+\[
+x_1 \oplus (x_2 \oplus x_3) = (x_1 \oplus x_2) \oplus x_3
+\]
+      \item Y conmutativa:
+\[
+x_1 \oplus x_2 = x_2 \oplus x_1
+\]
+
+      \mode<presentation>{\vfill\pause}
+      \item \textmark{Efecto}:
+\[ (x_1 \oplus x_2 \oplus x_3 \oplus x_4) \oplus (x_5 \oplus x_6 \oplus x_7 \oplus x_8) = \]
+\mode<presentation>{\vspace{-3em}}
+\[ (x_5 \oplus x_6 \oplus x_7 \oplus x_8) \oplus (x_1 \oplus x_2 \oplus x_3 \oplus x_4) \]
+
+    \end{itemize}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Reducción}
+\begin{itemize}
+  \item Función de reducción paralela:
+\begin{lstlisting}
+template <typename Range, typename Value, 
+          typename Reduction, typename Join>
+Value tbb::parallel_reduce(
+    const Range & range, const Value & identity, 
+    const Reduction & red, const Join & join);
+\end{lstlisting}
+
+  \begin{itemize}
+    \item \cppid{range}: Rango de iteración.
+    \item \cppid{identity}: Valor identidad para la operación de reducción.
+    \item \cppid{red}: Operación de reducción entre un rango y un valor inicial.
+    \item \cppid{join}: Operación de combinación de resultados parciales.
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Rangos}
+\begin{itemize}
+  \item Un rango representa un \textgood{espacio de iteraciones}, 
+        que se puede dividr en \textmark{subrangos}.
+    \begin{itemize}
+      \item Rango unidimensional: \cppid{blocked\_range}.
+    \end{itemize}
+
+  \mode<presentation>{\vfill\pause}
+  \item Rangos sobre índices numéricos:
+\begin{lstlisting}
+blocked_range<int> rng1{-10,10};
+blocked_range<std::size_t> rng2{0, vec.size()};
+\end{lstlisting}
+
+  \mode<presentation>{\vfill\pause}
+  \item Rangos sobre iteradores:
+\begin{lstlisting}
+blocked_range<std::vector<double>::iterator> rng3{vec.begin(), vec.end()};
+\end{lstlisting}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Reducción y combinación}
+\begin{itemize}
+  \item Reducción sobre un rango:
+    \begin{itemize}
+      \item Operación sobre un rango y un valor inicial.
+    \end{itemize}
+\begin{lstlisting}
+[=](const Range & rng, Value init) -> Value {
+  for (auto i= rng.begin(); i!=rng.end(); ++i) {
+    init = mi_operacion(init, vec[i]);
+  }
+  return init;
+}
+\end{lstlisting}
+
+  \mode<presentation>{\vfill\pause}
+  \item Combinación de resultados parciales:
+    \begin{itemize}
+      \item Combina dos valores.
+    \end{itemize}
+\begin{lstlisting}
+[](Value x, Value y} -> Value {
+  return mi_operacion(x,y);
+}
+\end{lstlisting}
+\end{itemize}
+\end{frame} 
+
+\begin{frame}[t,fragile]{Cálculo del máximo con índices}
+\begin{block}{Versión secuencial}
+\begin{lstlisting}
+template <typename T> auto max_value(const std::vector<T> &v) {
+  T result = std::numeric_limits<T>::min();
+  for (std::size_t i = 0; i < v.size(); ++i) {
+    result = std::max(result, v[i]);
+  }
+  return result;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cálculo de máximo con TBB e índices}
+\begin{block}{Versión paralela con TBB}
+\begin{lstlisting}
+template <typename T> auto max_value_reduce_idx(const std::vector<T> &v) {
+  return tbb::parallel_reduce(
+      tbb::blocked_range<std::size_t>{0, v.size()},
+      std::numeric_limits<T>::min(),
+      [&](const auto &rng, auto x) {
+        for (std::size_t i = rng.begin(); i != rng.end(); ++i) {
+          x = std::max(x, v[i]);
+        }
+        return x;
+      },
+      [](auto x, auto y) { return std::max(x, y); });
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cálculo del máximo basado en rango}
+\begin{block}{Versión secuencial}
+\begin{lstlisting}
+template <typename T> auto max_value_rng(const std::vector<T> &v) {
+  T result = std::numeric_limits<T>::min();
+  for (auto x : v) {
+    result = std::max(result, x);
+  }
+  return result;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cálculo del máximo con TBB basado en rango}
+\begin{block}{Versión paralela con TBB}
+\begin{lstlisting}
+template <typename T> auto max_value_reduce_iter(const std::vector<T> &v) {
+  return tbb::parallel_reduce(
+      tbb::blocked_range{v.begin(), v.end()}, std::numeric_limits<T>::min(),
+      [](const auto &rng, auto x) {
+        for (auto value : rng) {
+          x = std::max(x, value);
+        }
+        return x;
+      },
+      [](auto x, auto y) { return std::max(x, y); });
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cálculo del máximo con STL paralela}
+\begin{block}{Versión paralela con TBB}
+\begin{lstlisting}
+template <typename T> auto max_value_stl_par(const std::vector<T> &v) {
+  return std::reduce(std::execution::par, v.begin(), v.end(),
+                     std::numeric_limits<T>::min(),
+                     [](auto x, auto y) { return std::max(x, y); });
+}
+\end{lstlisting}
+\end{block}
+\begin{itemize}
+  \item Otras alternativas:
+    \begin{itemize}
+      \item \cppid{std::execution::unseq}
+      \item \cppid{std::execution::par\_unseq}
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Cálculo de $\pi$}
+\begin{itemize}
+  \item Cálculo de $\pi$:
+\[
+\int_0^1 \frac{1}{1+x^2} = arctg(1) - arctg(0) = \frac{\pi}{4}
+\]
+
+  \item Aproximación:
+\[
+\pi \approx 4 \cdot \sum_{i=1}^N f(\frac{i}{N} + \frac{\Delta x}{2} ) \Delta x
+\qquad;\qquad 
+\Delta x = \frac{1}{N}
+\]
+\[
+\pi \approx 4 \cdot \sum_{i=1}^N f(\frac{i}{N} + \frac{1}{2N}) \frac{1}{N} = 
+4 \cdot \sum_{i=1}^N f(\frac{i+0.5}{N}) \frac{1}{N}
+\]
+\[
+\pi \approx \frac{4}{N} \cdot \sum_{i=1}^N \frac{1}{1 + (\frac{i+0.5}{N})^2}
+\]
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Versión secuencial}
+\begin{block}{Cálculo de pi}
+\begin{lstlisting}
+double compute_pi_seq(long n) {
+  const double deltax = 1.0 / static_cast<double>(n);
+  double sum = 0;
+  for (long i=0; i<n; ++i) {
+    const double x = (static_cast<double>(i) + 0.5) * deltax;
+    sum += 1.0 / (1.0 + square(x));
+  }
+  return 4 * sum * deltax;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Versión paralela con TBB}
+\begin{block}{Cálculo de pi con parallel\_reduce}
+\begin{lstlisting}
+double compute_pi_tbb(long n) {
+  const double deltax = 1.0 / static_cast<double>(n);
+  double sum = tbb::parallel_reduce(
+      tbb::blocked_range<long>{0,n},
+      0.0,
+      [=](const tbb::blocked_range<long> & range, double init) {
+        for (long i=range.begin(); i!=range.end(); ++i) {
+          const double x = (static_cast<double>(i) + 0.5) * deltax;
+          init += 1.0 / (1.0 + square(x));
+        }
+        return init;
+      },
+      [](auto x, auto y) { return x+y; }
+  );
+  return 4 * sum * deltax;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
