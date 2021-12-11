@@ -1,1 +1,96 @@
 \subsection{parallel\_scan()}
+
+\begin{frame}[t]{Suma prefija}
+\begin{itemize}
+  \item Una \textemph{suma prefija} calcula un conjunto de 
+        \textmark{sumas parciales} a partir de una secuencia de datos.
+\[y_1 = x_1\]
+\[y_2 = x_1 \oplus x_2\]
+\[y3 = x_1 \oplus x_2 \oplus x_3\]
+\[\dots\]
+\[y_n = x_1 \oplus x_2 \oplus \ldots \oplus x_n\]
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Scan paralelo}
+\begin{itemize}
+  \item Función paralela de \emph{scan}:
+\begin{lstlisting}
+template <typename Range, typename Value,
+          typename Scan, typename ReverseJoin>
+Value tbb::parallel_scan(
+    const Range & range, const Value & identity,
+    const Scan & scan, const ReverseJoin & join);                   
+\end{lstlisting}
+  \begin{itemize}
+    \item \cppid{range}: Rango de iteración.
+    \item \cppid{identity}: Valor de identidad para la operación de scan.
+    \item \cppid{scan}: Operación de scan.
+      \begin{itemize}
+        \item Puede ejecutarse más de una vez sobre el mismo subrango: 
+              \textmark{pre-scan} y \textmark{final-scan}.
+      \end{itemize}
+    \item \cppid{join}: Operación de combinación de resultados parciales.
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Operación de scan}
+\begin{itemize}
+  \item Scan de un subrango:
+    \begin{itemize}
+      \item Un tercer parámetro para indicar \textmark{pre-scan} versus \textmark{final-scan}.
+    \end{itemize}
+\end{itemize}
+\begin{lstlisting}
+[=,&result](const Range & rng, Value init, bool is_final) {
+  for (auto i=rng.begin(); i!=rng.end(); ++i) {
+    init = mi_operacion(init,vec[i]);
+    if (is_final) { result[i] = init; }
+  }
+  return init;
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cálculo de una suma prefija}
+\begin{block}{Versión secuencial}
+\begin{lstlisting}
+auto prefix_sum(const std::vector<int> &v) {
+  const std::size_t max = v.size();
+  std::vector<int> result;
+  result.reserve(max);
+  result.push_back(v[0]);
+  for (std::size_t i = 1; i < max; ++i) {
+    result.push_back(result[i - 1] + v[i]);
+  }
+  return result;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[t,fragile]{Cálculo de una suma prefija}
+\begin{block}{Versión paralela}
+\begin{lstlisting}
+auto prefix_sum_tbb(const std::vector<int> &v) {
+  const std::size_t max = v.size();
+  std::vector<int> result(max);
+  tbb::parallel_scan(
+      tbb::blocked_range<std::size_t>{1, max}, int{0},
+      [v, &result](const tbb::blocked_range<std::size_t> &rng, int sum,
+                   bool is_final) {
+        for (auto i = rng.begin(); i != rng.end(); ++i) {
+          sum += v[i];
+          if (is_final) {
+            result[i] = sum;
+          }
+        }
+        return sum;
+      },
+      [](auto x, auto y) { return x + y; });
+  return result;
+}
+\end{lstlisting}
+\end{block}
+\end{frame}
