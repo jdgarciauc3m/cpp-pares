@@ -93,6 +93,28 @@ double compute_pi_tbb_for(long n) {
   return 4 * sum * deltax;
 }
 
+double compute_pi_omp(long n) {
+  const double deltax = 1.0 / static_cast<double>(n);
+  double sum = 0;
+#pragma omp parallel for reduction(+:sum)
+  for (long i = 0; i < n; ++i) {
+    const double x = (static_cast<double>(i) + 0.5) * deltax;
+    sum += 1.0 / (1.0 + square(x));
+  }
+  return 4 * sum * deltax;
+}
+
+double compute_pi_ompsimd(long n) {
+  const double deltax = 1.0 / static_cast<double>(n);
+  double sum = 0;
+#pragma omp parallel for reduction(+:sum)
+  for (long i = 0; i < n; ++i) {
+    const double x = (static_cast<double>(i) + 0.5) * deltax;
+    sum += 1.0 / (1.0 + square(x));
+  }
+  return 4 * sum * deltax;
+}
+
 template <typename F, typename S>
 void measure(std::string_view name, F f, long n, S &score) {
   using namespace std::chrono;
@@ -114,6 +136,8 @@ int main() {
   measure("3: TBB for + atomic", compute_pi_tbb_for, num_iterations,
           scoreboard);
   measure("4: STL par", compute_pi_stl_par, num_iterations, scoreboard);
+  measure("5: OpenMP base", compute_pi_omp, num_iterations, scoreboard);
+  measure("6: OpenMP+simd", compute_pi_ompsimd, num_iterations, scoreboard);
 
   double baseline = static_cast<double>(scoreboard["0: Sequential"]);
   for (auto &[name, value] : scoreboard) {
